@@ -4,7 +4,7 @@ from nmap import PortScanner, PortScannerError
 import ipaddress
 
 
-class NmapScanner:
+class NetScanner:
     """
     A class to handle Netscan scanning operations with error handling and logging.
     """
