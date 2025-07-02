@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Network Scanner</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        max-width: 600px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .header {
+        margin-bottom: 40px;
+      }
+
+      .header h1 {
+        color: #2c3e50;
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        font-weight: 700;
+      }
+
+      .header p {
+        color: #7f8c8d;
+        font-size: 1.1em;
+      }
+
+      .scan-form {
+        margin-bottom: 30px;
+      }
+
+      .input-group {
+        position: relative;
+        margin-bottom: 30px;
+      }
+
+      .input-group input {
+        width: 100%;
+        padding: 20px;
+        border: 2px solid #e0e6ed;
+        border-radius: 15px;
+        font-size: 1.1em;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+      }
+
+      .input-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        background: white;
+      }
+
+      .input-group label {
+        position: absolute;
+        left: 20px;
+        top: 20px;
+        font-size: 1.1em;
+        color: #7f8c8d;
+        transition: all 0.3s ease;
+        pointer-events: none;
+      }
+
+      .input-group input:focus + label,
+      .input-group input:not(:placeholder-shown) + label {
+        top: -10px;
+        left: 15px;
+        font-size: 0.9em;
+        color: #667eea;
+        background: white;
+        padding: 0 5px;
+      }
+
+      .scan-btn {
+        width: 100%;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 15px;
+        font-size: 1.2em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .scan-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+      }
+
+      .scan-btn:active {
+        transform: translateY(0);
+      }
+
+      .scan-btn.loading {
+        pointer-events: none;
+      }
+
+      .scan-btn.loading::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid transparent;
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .navigation {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+      }
+
+      .nav-link {
+        padding: 12px 25px;
+        background: #f8f9fa;
+        color: #6c757d;
+        text-decoration: none;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+      }
+
+      .nav-link:hover {
+        background: #e9ecef;
+        color: #495057;
+        transform: translateY(-1px);
+      }
+
+      .examples {
+        margin-top: 30px;
+        padding: 25px;
+        background: #f8f9fa;
+        border-radius: 15px;
+        text-align: left;
+      }
+
+      .examples h3 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+      }
+
+      .examples ul {
+        list-style: none;
+        color: #6c757d;
+      }
+
+      .examples li {
+        margin-bottom: 8px;
+        padding-left: 20px;
+        position: relative;
+      }
+
+      .examples li::before {
+        content: "•";
+        color: #667eea;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 30px 20px;
+        }
+
+        .header h1 {
+          font-size: 2em;
+        }
+
+        .navigation {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🔍 Netscan Networking Tool</h1>
+        <p>Enter a domain or IP address to scan for open ports</p>
+      </div>
+
+      <form
+        class="scan-form"
+        action="/api/v1/scans/single"
+        method="post"
+        onsubmit="submitScan(event)"
+      >
+        <div class="input-group">
+          <input
+            type="text"
+            name="target"
+            id="target"
+            placeholder=" "
+            required
+          />
+          <label for="target">Target (Domain or IP)</label>
+        </div>
+
+        <button type="submit" class="scan-btn" id="scanBtn">
+          <span id="btnText">Start Scan</span>
+        </button>
+      </form>
+
+      <!-- ✅ Add this -->
+      <div
+        id="scanResults"
+        style="margin-top: 30px; text-align: left; display: none"
+      >
+        <h3>🔍 Scan Results</h3>
+        <pre
+          id="resultBox"
+          style="background: #f4f4f4; padding: 20px; border-radius: 10px"
+        ></pre>
+      </div>
+
+      <div class="navigation">
+        <a href="/results" class="nav-link">📊 View Results</a>
+        <a href="/docs" class="nav-link">📖 API Documentation</a>
+      </div>
+
+      <div class="examples">
+        <h3>💡 Example targets:</h3>
+        <ul>
+          <li>google.com</li>
+          <li>github.com</li>
+          <li>192.168.1.1</li>
+          <li>scanme.nmap.org</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      async function submitScan(event) {
+        event.preventDefault();
+        const btn = document.getElementById("scanBtn");
+        const btnText = document.getElementById("btnText");
+        const targetInput = document.getElementById("target");
+        const target = targetInput.value;
+        const resultBox = document.getElementById("resultBox");
+        const resultsSection = document.getElementById("scanResults");
+
+        // Reset
+        resultBox.textContent = "";
+        resultsSection.style.display = "none";
+
+        btn.classList.add("loading");
+        btnText.textContent = "Scanning...";
+
+        try {
+          const response = await fetch("/api/v1/scans/single", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ target: target }),
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.detail || "Scan failed");
+          }
+
+          // Show formatted scan result
+          resultsSection.style.display = "block";
+          resultBox.textContent = JSON.stringify(result, null, 2);
+        } catch (err) {
+          resultsSection.style.display = "block";
+          resultBox.textContent = "❌ Error: " + err.message;
+        } finally {
+          btn.classList.remove("loading");
+          btnText.textContent = "Start Scan";
+          targetInput.value = "";
+        }
+      }
+    </script>
+  </body>
+</html>
