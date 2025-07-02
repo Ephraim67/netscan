@@ -23,7 +23,7 @@ from schemas.scan import ScanRequest
 # Create FastAPI app
 app = FastAPI(
     title="NetScan Port Scanner API",
-    description="Easy-to-use network port scanner",
+    # description="Easy-to-use network port scanner",
     version="1.0.0"
 )
 

@@ -2,10 +2,11 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from services.viewdns_scanner import NetScanner
 from schemas.scan import ScanRequest, ScanResult
-from models.database import get_db, ScanTarget, ScanHistory  # Import your DB models
+from models.database import get_db, ScanTarget, ScanHistory, SessionLocal  # Import your DB models and SessionLocal
 import logging
 import json
 from datetime import datetime
+from fastapi import BackgroundTasks
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ async def scanner_health():
 async def scan_single(
     request: ScanRequest,
     scanner: NetScanner = Depends(get_scanner),
-    db: Session = Depends(get_db)  # Add database dependency
+    db: Session = Depends(get_db) 
 ):
     """Perform a single port scan."""
     start_time = datetime.utcnow()
@@ -108,7 +109,7 @@ async def scan_single(
             detail="Internal server error during scan operation"
         )
 
-# Add these additional endpoints to interact with your database
+
 
 @router.get("/scans/history")
 async def get_scan_history(
@@ -158,19 +159,54 @@ async def get_scan_targets(db: Session = Depends(get_db)):
         ]
     }
 
-@router.get("/scans/target/{target_id}")
-async def get_scan_target(target_id: int, db: Session = Depends(get_db)):
-    """Get a specific scan target by ID."""
-    target = db.query(ScanTarget).filter(ScanTarget.id == target_id).first()
-    
-    if not target:
-        raise HTTPException(status_code=404, detail="Target not found")
-    
-    return {
-        "id": target.id,
-        "target": target.target,
-        "status": target.status,
-        "created_at": target.created_at,
-        "updated_at": target.updated_at,
-        "result": json.loads(target.result) if target.result else None
-    }
+@router.post("/scans/schedule-once")
+async def schedule_scan_once(
+    background_tasks: BackgroundTasks,
+    scanner: NetScanner = Depends(get_scanner),
+    db: Session = Depends(get_db)
+):
+    """Trigger background scan for all saved targets."""
+
+    def run_scan():
+        session = SessionLocal()  # Create a fresh session for background thread
+        try:
+            targets = session.query(ScanTarget).all()
+            for target in targets:
+                try:
+                    result = scanner.scan_host(target.target)
+
+                    history = ScanHistory(
+                        target=target.target,
+                        status=result.get("status", "completed"),
+                        ports=result.get("ports", []),
+                        error_message=result.get("error"),
+                        scan_time=datetime.utcnow()
+                    )
+
+                    session.add(history)
+
+                    target.status = result.get("status", "completed")
+                    target.result = json.dumps(result)
+                    target.updated_at = datetime.utcnow()
+
+                    session.commit()
+
+                except Exception as e:
+                    logger.error(f"Error scanning {target.target}: {e}")
+
+                    history = ScanHistory(
+                        target=target.target,
+                        status="failed",
+                        ports=[],
+                        error_message=str(e),
+                        scan_time=datetime.utcnow()
+                    )
+
+                    session.add(history)
+                    session.commit()
+
+        finally:
+            session.close()
+
+    background_tasks.add_task(run_scan)
+    return {"message": "Scan scheduled for all saved targets."}

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan Results</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        max-width: 600px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .header {
+        margin-bottom: 40px;
+      }
+
+      .header h1 {
+        color: #2c3e50;
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        font-weight: 700;
+      }
+
+      .header p {
+        color: #7f8c8d;
+        font-size: 1.1em;
+      }
+
+      .scan-form {
+        margin-bottom: 30px;
+      }
+
+      .input-group {
+        position: relative;
+        margin-bottom: 30px;
+      }
+
+      .input-group input {
+        width: 100%;
+        padding: 20px;
+        border: 2px solid #e0e6ed;
+        border-radius: 15px;
+        font-size: 1.1em;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+      }
+
+      .input-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        background: white;
+      }
+
+      .input-group label {
+        position: absolute;
+        left: 20px;
+        top: 20px;
+        font-size: 1.1em;
+        color: #7f8c8d;
+        transition: all 0.3s ease;
+        pointer-events: none;
+      }
+
+      .input-group input:focus + label,
+      .input-group input:not(:placeholder-shown) + label {
+        top: -10px;
+        left: 15px;
+        font-size: 0.9em;
+        color: #667eea;
+        background: white;
+        padding: 0 5px;
+      }
+
+      .scan-btn {
+        width: 100%;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 15px;
+        font-size: 1.2em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .scan-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+      }
+
+      .scan-btn:active {
+        transform: translateY(0);
+      }
+
+      .scan-btn.loading {
+        pointer-events: none;
+      }
+
+      .scan-btn.loading::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid transparent;
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .navigation {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+      }
+
+      .nav-link {
+        padding: 12px 25px;
+        background: #f8f9fa;
+        color: #6c757d;
+        text-decoration: none;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+      }
+
+      .nav-link:hover {
+        background: #e9ecef;
+        color: #495057;
+        transform: translateY(-1px);
+      }
+
+      .examples {
+        margin-top: 30px;
+        padding: 25px;
+        background: #f8f9fa;
+        border-radius: 15px;
+        text-align: left;
+      }
+
+      .examples h3 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+      }
+
+      .examples ul {
+        list-style: none;
+        color: #6c757d;
+      }
+
+      .examples li {
+        margin-bottom: 8px;
+        padding-left: 20px;
+        position: relative;
+      }
+
+      .examples li::before {
+        content: "•";
+        color: #667eea;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 30px 20px;
+        }
+
+        .header h1 {
+          font-size: 2em;
+        }
+
+        .navigation {
+          flex-direction: column;
+        }
+      }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Recent Scans</h1>
+        <div class="results-list">
+            {% for scan in scans %}
+            <div class="result-item">
+                <h3>{{ scan.target }}</h3>
+                <p>Status: {{ scan.status }}</p>
+                <p>Scanned: {{ scan.scan_time }}</p>
+                {% if scan.ports %}
+                    <p>Open Ports: {{ scan.ports|length }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <a href="/" class="nav-link">← Back to Scanner</a>
+    </div>
+</body>
+</html>

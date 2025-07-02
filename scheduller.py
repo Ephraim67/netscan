@@ -1,8 +1,8 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from services.viewdns_scanner import NetScanner
 from models import ScanTarget, ScanHistory, SessionLocal
-import datetime
-from email import send_daily_email  
+from datetime import datetime
+from services.send_email import send_daily_email
 
 scanner = NetScanner()
 
@@ -19,7 +19,8 @@ def run_scheduled_scans():
                 status=result.get("status", "error"),
                 ports=result.get("ports", []),
                 error_message=result.get("error"),
-                scan_time=datetime.datetime.now(),
+                # scan_time=datetime.datetime.now(),
+                scan_time=datetime.datetime.now()
             )
 
             db.add(history)
