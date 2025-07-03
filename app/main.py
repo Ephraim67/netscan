@@ -116,16 +116,26 @@ async def app_health():
 async def scan_interface(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse("scan_interface.html", {"request": request})
 
+
 @app.get("/results", response_class=HTMLResponse)
-async def view_results(request: Request, db: Session = Depends(get_db)):
-    recent_scans = db.query(ScanHistory)\
-                    .order_by(ScanHistory.scan_time.desc())\
-                    .limit(20)\
-                    .all()
-    return templates.TemplateResponse("results.html", {
-        "request": request,
-        "scans": recent_scans
-    })
+async def scan_interface(request: Request, db: Session = Depends(get_db)):
+    return templates.TemplateResponse("results.html", {"request": request})
+
+@app.get("/schedulescan", response_class=HTMLResponse)
+async def schedule_scan(request: Request, db: Session = Depends(get_db)):
+    
+    return templates.TemplateResponse("schedule_scan.html", {"request": request})
+
+# @app.get("/results", response_class=HTMLResponse)
+# async def view_results(request: Request, db: Session = Depends(get_db)):
+#     recent_scans = db.query(ScanHistory)\
+#                     .order_by(ScanHistory.scan_time.desc())\
+#                     .limit(20)\
+#                     .all()
+#     return templates.TemplateResponse("results.html", {
+#         "request": request,
+#         "scans": recent_scans
+#     })
 
 @app.get("/test-db")
 def test_db_connection(db: Session = Depends(get_db)):

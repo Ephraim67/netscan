@@ -1,16 +1,22 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Body
 from sqlalchemy.orm import Session
 from services.viewdns_scanner import NetScanner
 from schemas.scan import ScanRequest, ScanResult
 from models.database import get_db, ScanTarget, ScanHistory, SessionLocal  # Import your DB models and SessionLocal
 import logging
 import json
+from typing import List
+from pydantic import BaseModel
 from datetime import datetime
-from fastapi import BackgroundTasks
+# from fastapi import BackgroundTasks
+from scheduller import start_scheduler
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+class ScheduleRequest(BaseModel):
+    targets: List[str]
 
 def get_scanner() -> NetScanner:
     """Dependency injection for NetScanner."""
@@ -159,54 +165,62 @@ async def get_scan_targets(db: Session = Depends(get_db)):
         ]
     }
 
+# @router.post("/scans/schedule-once")
+# async def schedule_scan_once(
+#     background_tasks: BackgroundTasks,
+#     scanner: NetScanner = Depends(get_scanner),
+#     db: Session = Depends(get_db)
+# ):
+#     """Trigger background scan for all saved targets."""
+
+#     def run_scan():
+#         session = SessionLocal()
+#         try:
+#             targets = session.query(ScanTarget).all()
+#             for target in targets:
+#                 try:
+#                     result = scanner.scan_host(target.target)
+
+#                     history = ScanHistory(
+#                         target=target.target,
+#                         status=result.get("status", "completed"),
+#                         ports=result.get("ports", []),
+#                         error_message=result.get("error"),
+#                         scan_time=datetime.utcnow()
+#                     )
+
+#                     session.add(history)
+
+#                     target.status = result.get("status", "completed")
+#                     target.result = json.dumps(result)
+#                     target.updated_at = datetime.utcnow()
+
+#                     session.commit()
+
+#                 except Exception as e:
+#                     logger.error(f"Error scanning {target.target}: {e}")
+
+#                     history = ScanHistory(
+#                         target=target.target,
+#                         status="failed",
+#                         ports=[],
+#                         error_message=str(e),
+#                         scan_time=datetime.utcnow()
+#                     )
+
+#                     session.add(history)
+#                     session.commit()
+
+#         finally:
+#             session.close()
+
+#     background_tasks.add_task(run_scan)
+#     return {"message": "Scan scheduled for all saved targets."}
+
+
 @router.post("/scans/schedule-once")
-async def schedule_scan_once(
-    background_tasks: BackgroundTasks,
-    scanner: NetScanner = Depends(get_scanner),
-    db: Session = Depends(get_db)
-):
-    """Trigger background scan for all saved targets."""
-
-    def run_scan():
-        session = SessionLocal()  # Create a fresh session for background thread
-        try:
-            targets = session.query(ScanTarget).all()
-            for target in targets:
-                try:
-                    result = scanner.scan_host(target.target)
-
-                    history = ScanHistory(
-                        target=target.target,
-                        status=result.get("status", "completed"),
-                        ports=result.get("ports", []),
-                        error_message=result.get("error"),
-                        scan_time=datetime.utcnow()
-                    )
-
-                    session.add(history)
-
-                    target.status = result.get("status", "completed")
-                    target.result = json.dumps(result)
-                    target.updated_at = datetime.utcnow()
-
-                    session.commit()
-
-                except Exception as e:
-                    logger.error(f"Error scanning {target.target}: {e}")
-
-                    history = ScanHistory(
-                        target=target.target,
-                        status="failed",
-                        ports=[],
-                        error_message=str(e),
-                        scan_time=datetime.utcnow()
-                    )
-
-                    session.add(history)
-                    session.commit()
-
-        finally:
-            session.close()
-
-    background_tasks.add_task(run_scan)
-    return {"message": "Scan scheduled for all saved targets."}
+async def schedule_scan_once(payload: ScheduleRequest):
+    start_scheduler(selected_targets=payload.targets)
+    return {
+        "message": f"Scheduler started. Scans will run every 10 minutes for {len(payload.targets)} targets."
+    }

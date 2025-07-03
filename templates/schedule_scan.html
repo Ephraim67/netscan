@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bulk Scanner - Netscan Pro</title>
+    <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        --danger-gradient: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+        --warning-gradient: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%);
+        --glass-bg: rgba(255, 255, 255, 0.25);
+        --glass-border: rgba(255, 255, 255, 0.18);
+        --shadow-light: 0 8px 32px rgba(31, 38, 135, 0.37);
+        --shadow-heavy: 0 20px 40px rgba(0, 0, 0, 0.1);
+        --text-primary: #2c3e50;
+        --text-secondary: #6c757d;
+        --text-light: #8e9aaf;
+        --bg-light: #f8f9fa;
+        --bg-dark: #343a40;
+        --border-radius: 20px;
+        --border-radius-sm: 12px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background: var(--primary-gradient);
+        min-height: 100vh;
+        padding: 20px;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+          radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+          radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .container {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-heavy);
+        padding: 40px;
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+        animation: fadeInUp 0.8s ease-out;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+        position: relative;
+      }
+
+      .header::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 4px;
+        background: var(--success-gradient);
+        border-radius: 2px;
+      }
+
+      .header h1 {
+        color: white;
+        font-size: clamp(2rem, 5vw, 3rem);
+        margin-bottom: 10px;
+        font-weight: 800;
+        text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        letter-spacing: -0.5px;
+      }
+
+      .header p {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.2em;
+        margin-bottom: 20px;
+        font-weight: 300;
+      }
+
+      .status-banner {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--border-radius-sm);
+        padding: 20px;
+        margin-bottom: 30px;
+        display: none;
+        align-items: center;
+        gap: 15px;
+        transition: var(--transition);
+        transform: translateY(-10px);
+        opacity: 0;
+      }
+
+      .status-banner.show {
+        display: flex;
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      .status-banner.success {
+        background: rgba(40, 167, 69, 0.1);
+        border-color: rgba(40, 167, 69, 0.3);
+        color: #28a745;
+      }
+
+      .status-banner.error {
+        background: rgba(220, 53, 69, 0.1);
+        border-color: rgba(220, 53, 69, 0.3);
+        color: #dc3545;
+      }
+
+      .status-banner.warning {
+        background: rgba(255, 193, 7, 0.1);
+        border-color: rgba(255, 193, 7, 0.3);
+        color: #ffc107;
+      }
+
+      .status-banner.info {
+        background: rgba(23, 162, 184, 0.1);
+        border-color: rgba(23, 162, 184, 0.3);
+        color: #17a2b8;
+      }
+
+      .status-icon {
+        font-size: 1.5em;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+      }
+
+      .targets-section {
+        margin-bottom: 40px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+
+      .section-title {
+        color: white;
+        font-size: 1.8em;
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .target-count {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 0.9em;
+        border: 1px solid var(--glass-border);
+      }
+
+      .targets-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+      }
+
+      .target-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--border-radius-sm);
+        padding: 25px;
+        position: relative;
+        overflow: hidden;
+        transition: var(--transition);
+        cursor: pointer;
+        animation: slideInUp 0.6s ease-out;
+      }
+
+      .target-card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      }
+
+      .target-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--text-secondary);
+        transition: var(--transition);
+      }
+
+      .target-card.active::before {
+        background: var(--success-gradient);
+      }
+
+      .target-card.error::before {
+        background: var(--danger-gradient);
+      }
+
+      .target-card.pending::before {
+        background: var(--warning-gradient);
+      }
+
+      @keyframes slideInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .target-name {
+        font-weight: 700;
+        color: white;
+        margin-bottom: 12px;
+        font-size: 1.1em;
+        word-break: break-all;
+      }
+
+      .target-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 15px;
+        letter-spacing: 0.5px;
+      }
+
+      .target-status.active {
+        background: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+      }
+
+      .target-status.inactive {
+        background: rgba(108, 117, 125, 0.2);
+        color: var(--text-secondary);
+      }
+
+      .target-status.error {
+        background: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+      }
+
+      .target-status.pending {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+      }
+
+      .target-info {
+        font-size: 0.9em;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.6;
+      }
+
+      .target-info div {
+        margin-bottom: 5px;
+      }
+
+      .scan-controls {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--border-radius);
+        padding: 40px;
+        text-align: center;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .scan-controls::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: var(--success-gradient);
+        z-index: -1;
+        border-radius: var(--border-radius);
+        opacity: 0;
+        transition: var(--transition);
+      }
+
+      .scan-controls:hover::before {
+        opacity: 0.1;
+      }
+
+      .scan-controls h3 {
+        color: white;
+        margin-bottom: 15px;
+        font-size: 1.5em;
+        font-weight: 700;
+      }
+
+      .scan-controls p {
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 30px;
+        font-size: 1.1em;
+      }
+
+      .form-group {
+        margin-bottom: 25px;
+        text-align: left;
+      }
+
+      .form-group label {
+        display: block;
+        color: white;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 0.9em;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 15px 20px;
+        border: 2px solid var(--glass-border);
+        border-radius: var(--border-radius-sm);
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        color: white;
+        font-size: 1em;
+        transition: var(--transition);
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: rgba(40, 167, 69, 0.5);
+        box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+      }
+
+      .form-group input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      .btn {
+        background: var(--success-gradient);
+        color: white;
+        border: none;
+        padding: 18px 40px;
+        border-radius: var(--border-radius-sm);
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+        min-width: 200px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px rgba(40, 167, 69, 0.4);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .btn.loading {
+        pointer-events: none;
+      }
+
+      .btn.loading::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid transparent;
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .progress-section {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--border-radius);
+        padding: 30px;
+        margin-bottom: 30px;
+        display: none;
+        animation: slideInDown 0.5s ease-out;
+      }
+
+      .progress-section.active {
+        display: block;
+      }
+
+      @keyframes slideInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      .progress-title {
+        color: white;
+        font-size: 1.5em;
+        font-weight: 700;
+      }
+
+      .progress-stats {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+      }
+
+      .stat-item {
+        text-align: center;
+        padding: 10px;
+        border-radius: var(--border-radius-sm);
+        background: rgba(255, 255, 255, 0.1);
+        min-width: 80px;
+      }
+
+      .stat-number {
+        font-size: 2em;
+        font-weight: 800;
+        color: white;
+        display: block;
+        line-height: 1;
+      }
+
+      .stat-label {
+        font-size: 0.8em;
+        color: rgba(255, 255, 255, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 5px;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 25px;
+        position: relative;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: var(--success-gradient);
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 0%;
+        position: relative;
+      }
+
+      .progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        animation: shimmer 2s infinite;
+      }
+
+      @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+
+      .scan-log {
+        background: var(--bg-dark);
+        color: #f8f9fa;
+        border-radius: var(--border-radius-sm);
+        padding: 20px;
+        max-height: 350px;
+        overflow-y: auto;
+        font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace;
+        font-size: 0.9em;
+        line-height: 1.6;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .scan-log::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .scan-log::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+
+      .scan-log::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+      }
+
+      .log-entry {
+        margin-bottom: 8px;
+        padding: 5px 0;
+        border-left: 3px solid transparent;
+        padding-left: 10px;
+        transition: var(--transition);
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateX(-10px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+
+      .log-entry.success {
+        color: #28a745;
+        border-left-color: #28a745;
+      }
+
+      .log-entry.error {
+        color: #dc3545;
+        border-left-color: #dc3545;
+      }
+
+      .log-entry.info {
+        color: #17a2b8;
+        border-left-color: #17a2b8;
+      }
+
+      .log-entry.warning {
+        color: #ffc107;
+        border-left-color: #ffc107;
+      }
+
+      .navigation {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-top: 40px;
+        flex-wrap: wrap;
+      }
+
+      .nav-link {
+        padding: 15px 30px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        color: white;
+        text-decoration: none;
+        border-radius: var(--border-radius-sm);
+        transition: var(--transition);
+        font-weight: 600;
+        border: 1px solid var(--glass-border);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.9em;
+      }
+
+      .nav-link:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .empty-state h3 {
+        margin-bottom: 20px;
+        font-size: 1.8em;
+        color: white;
+      }
+
+      .empty-state p {
+        margin-bottom: 30px;
+        font-size: 1.1em;
+      }
+
+      .empty-state .nav-link {
+        background: var(--success-gradient);
+        color: white;
+        display: inline-block;
+        padding: 18px 35px;
+        font-size: 1.1em;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--border-radius-sm);
+        padding: 20px;
+        color: white;
+        z-index: 1000;
+        transform: translateX(100%);
+        transition: var(--transition);
+        max-width: 400px;
+      }
+
+      .toast.show {
+        transform: translateX(0);
+      }
+
+      .toast.success {
+        border-left: 4px solid #28a745;
+      }
+
+      .toast.error {
+        border-left: 4px solid #dc3545;
+      }
+
+      .toast.warning {
+        border-left: 4px solid #ffc107;
+      }
+
+      .toast.info {
+        border-left: 4px solid #17a2b8;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 20px;
+          margin: 10px;
+        }
+
+        .header h1 {
+          font-size: 2.5em;
+        }
+
+        .targets-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .section-header {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        .progress-stats {
+          justify-content: center;
+        }
+
+        .scan-controls {
+          padding: 30px 20px;
+        }
+
+        .navigation {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .nav-link {
+          width: 100%;
+          max-width: 300px;
+          text-align: center;
+        }
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 10px;
+        }
+
+        .container {
+          padding: 15px;
+        }
+
+        .progress-stats {
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .btn {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Bulk Network Scanner</h1>
+        <p>Advanced multi-target scanning with real-time monitoring</p>
+      </div>
+
+      <div id="statusBanner" class="status-banner">
+        <span class="status-icon">ℹ️</span>
+        <span id="statusMessage">Ready to scan</span>
+      </div>
+
+      <div class="targets-section">
+        <div class="section-header">
+          <h2 class="section-title">📋 Saved Targets</h2>
+          <span class="target-count" id="targetCount">
+            <div class="loading-spinner" style="width: 20px; height: 20px; border-width: 2px;"></div>
+          </span>
+        </div>
+
+        <div id="targetsLoading" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.7);">
+          <div class="loading-spinner"></div>
+          <div style="margin-top: 20px;">Loading targets...</div>
+        </div>
+
+        <div id="targetsGrid" class="targets-grid" style="display: none;"></div>
+
+        <div id="targetsEmpty" class="empty-state" style="display: none;">
+          <h3>No targets found</h3>
+          <p>Start by adding some targets to scan. Once you have targets, you can perform bulk operations on all of them.</p>
+          <a href="/scan" class="nav-link">🔍 Start Scanning</a>
+        </div>
+      </div>
+
+      <div class="scan-controls">
+        <h3>🎯 Quick Target Entry</h3>
+        <p>Add a new target and schedule an immediate scan</p>
+
+        <form id="scheduleForm">
+          <div class="form-group">
+            <label for="targetInput">
+              <span>🌐 Target (IP Address or Domain)</span>
+            </label>
+            <input
+              type="text"
+              id="targetInput"
+              name="target"
+              required
+              placeholder="e.g., 192.168.1.1, example.com, or subdomain.example.com"
+              autocomplete="off"
+            />
+          </div>
+          <button type="submit" class="btn">
+            <span id="scheduleButtonText">Schedule Scan</span>
+          </button>
+        </form>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+          <button id="bulkScanBtn" class="btn" onclick="startBulkScan()">
+            <span id="scanBtnText">🚀 Start Bulk Scan</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="progressSection" class="progress-section">
+        <div class="progress-header">
+          <h3 class="progress-title">📊 Scan Progress</h3>
+          <div class="progress-stats">
+            <div class="stat-item">
+              <span class="stat-number" id="completedCount">0</span>
+              <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number" id="totalCount">0</span>
+              <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number" id="errorCount">0</span>
+              <div class="stat-label">Errors</div>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number" id="successRate">0%</span>
+              <div class="stat-label">Success Rate</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="scan-log" id="scanLog">
+          <div class="log-entry info">[INFO] Scan log will appear here...</div>
+        </div>
+      </div>
+
+      <div class="navigation">
+        <a href="/scan" class="nav-link">← Single Scan</a>
+        <a href="/results" class="nav-link">📊 View Results</a>
+        <a href="/history" class="nav-link">📋 Scan History</a>
+        <a href="/docs" class="nav-link">📖 API Docs</a>
+      </div>
+    </div>
+
+    <script>
+      class BulkScanner {
+        constructor() {
+          this.targets = [];
+          this.scanInProgress = false;
+          this.progressInterval = null;
+          this.startTime = null;
+          this.lastCompletedCount = 0;
+          this.retryCount = 0;
+          this.maxRetries = 3;
+          
+          this.init();
+        }
+
+        init() {
+          this.loadTargets();
+          this.setupEventListeners();
+          this.setupFormValidation();
+        }
+
+        setupEventListeners() {
+          // Form submission
+          document.getElementById('scheduleForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.scheduleTarget();
+          });
+
+          // Real-time input validation
+          document.getElementById('targetInput').addEventListener('input', (e) => {
+            this.validateTarget(e.target);
+          });
+
+          // Keyboard shortcuts
+          document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+              if (!this.scanInProgress) {
+                this.startBulkScan();
+              }
+            }
+          });
+        }
+
+        setupFormValidation() {
+          const input = document.getElementById('targetInput');
+          
+          input.addEventListener('blur', () => {
+            this.validateTarget(input);
+          });
+        }
+
+        validateTarget(input) {
+          const value = input.value.trim();
+          const isValid = this.isValidTarget(value);
+          
+          if (value && !isValid) {
+            input.style.borderColor = 'rgba(220, 53, 69, 0.5)';
+            input.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.1)';
+          } else {
+            input.style.borderColor = 'rgba(255, 255, 255, 0.18)';
+            input.style.boxShadow = 'none';
+          }
+          
+          return isValid;
+        }
+
+        isValidTarget(target) {
+          if (!target) return false;
+          
+          // IP address validation
+          const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+          
+          // Domain validation
+          const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+          
+          return ipRegex.test(target) || domainRegex.test(target);
+        }
+
+        async scheduleTarget() {
+          const input = document.getElementById('targetInput');
+          const button = document.querySelector('#scheduleForm button');
+          const buttonText = document.getElementById('scheduleButtonText');
+          const target = input.value.trim();
+
+          if (!this.isValidTarget(target)) {
+            this.showToast('Please enter a valid IP address or domain name', 'error');
+            return;
+          }
+
+          button.classList.add('loading');
+          buttonText.textContent = 'Scheduling...';
+          button.disabled = true;
+
+          try {
+            const response = await fetch('/api/v1/scans/schedule-once', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ targets: [target] }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+              throw new Error(result.detail || 'Failed to schedule scan');
+            }
+
+            this.showToast(`Scan scheduled successfully for ${target}`, 'success');
+            input.value = '';
+            
+            // Refresh targets after a short delay
+            setTimeout(() => {
+              this.loadTargets();
+            }, 1000);
+
+          } catch (error) {
+            this.showToast('Error scheduling scan: ' + error.message, 'error');
+          } finally {
+            button.classList.remove('loading');
+            buttonText.textContent = 'Schedule Scan';
+            button.disabled = false;
+          }
+        }
+
+        async loadTargets() {
+          const loadingEl = document.getElementById('targetsLoading');
+          const gridEl = document.getElementById('targetsGrid');
+          const emptyEl = document.getElementById('targetsEmpty');
+          const countEl = document.getElementById('targetCount');
+          const scanBtn = document.getElementById('bulkScanBtn');
+
+          try {
+            const response = await fetch('/api/v1/scans/targets');
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(data.detail || 'Failed to load targets');
+            }
+
+            this.targets = data.targets || [];
+
+            if (this.targets.length === 0) {
+              emptyEl.style.display = 'block';
+              scanBtn.disabled = true;
+              countEl.innerHTML = '<span style="color: rgba(255, 255, 255, 0.7);">No targets</span>';
+            } else {
+              gridEl.innerHTML = this.targets
+                .map((target, index) => this.createTargetCard(target, index))
+                .join('');
+              gridEl.style.display = 'grid';
+              countEl.innerHTML = `<span style="color: white; font-weight: bold;">${this.targets.length}</span> targets`;
+              scanBtn.disabled = false;
+              
+              // Animate cards
+              this.animateCards();
+            }
+          } catch (error) {
+            this.showStatus('Error loading targets: ' + error.message, 'error');
+            scanBtn.disabled = true;
+            countEl.innerHTML = '<span style="color: #dc3545;">Error</span>';
+          }
+
+          loadingEl.style.display = 'none';
+        }
+
+        animateCards() {
+          const cards = document.querySelectorAll('.target-card');
+          cards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+          });
+        }
+
+        createTargetCard(target, index) {
+          const updatedAt = new Date(target.updated_at).toLocaleString();
+          const statusClass = this.getStatusClass(target.status);
+          const statusIcon = this.getStatusIcon(target.status);
+
+          let portsInfo = this.getPortsInfo(target);
+          let additionalInfo = this.getAdditionalInfo(target);
+
+          return `
+            <div class="target-card ${statusClass}" style="animation-delay: ${index * 0.1}s;">
+              <div class="target-name">${this.escapeHtml(target.target)}</div>
+              <div class="target-status ${statusClass}">
+                ${statusIcon}
+                <span>${target.status}</span>
+              </div>
+              <div class="target-info">
+                <div><strong>Last Updated:</strong> ${updatedAt}</div>
+                <div><strong>Ports:</strong> ${portsInfo}</div>
+                ${additionalInfo}
+              </div>
+            </div>
+          `;
+        }
+
+        getStatusClass(status) {
+          switch (status) {
+            case 'completed': return 'active';
+            case 'failed': return 'error';
+            case 'running': return 'pending';
+            default: return 'inactive';
+          }
+        }
+
+        getStatusIcon(status) {
+          switch (status) {
+            case 'completed': return '✅';
+            case 'failed': return '❌';
+            case 'running': return '🔄';
+            default: return '⏳';
+          }
+        }
+
+        getPortsInfo(target) {
+          if (!target.result) return 'No scan data';
+
+          try {
+            const result = JSON.parse(target.result);
+            if (result.ports && Object.keys(result.ports).length > 0) {
+              const portCount = Object.keys(result.ports).length;
+              return `${portCount} open port${portCount !== 1 ? 's' : ''}`;
+            } else {
+              return 'No open ports';
+            }
+          } catch (e) {
+            return 'Invalid result data';
+          }
+        }
+
+        getAdditionalInfo(target) {
+          if (!target.result) return '';
+
+          try {
+            const result = JSON.parse(target.result);
+            let info = '';
+
+            if (result.scan_time) {
+              const scanTime = (result.scan_time / 1000).toFixed(2);
+              info += `<div><strong>Scan Time:</strong> ${scanTime}s</div>`;
+            }
+
+            if (result.host_status) {
+              info += `<div><strong>Host Status:</strong> ${result.host_status}</div>`;
+            }
+
+            return info;
+          } catch (e) {
+            return '';
+          }
+        }
+
+        escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        async startBulkScan() {
+          if (this.scanInProgress) return;
+
+          const scanBtn = document.getElementById('bulkScanBtn');
+          const scanBtnText = document.getElementById('scanBtnText');
+          const progressSection = document.getElementById('progressSection');
+
+          this.scanInProgress = true;
+          this.startTime = Date.now();
+          this.lastCompletedCount = 0;
+          this.retryCount = 0;
+
+          scanBtn.classList.add('loading');
+          scanBtnText.textContent = 'Initializing...';
+          scanBtn.disabled = true;
+
+          // Show progress section with animation
+          progressSection.classList.add('active');
+          this.initializeProgress();
+
+          try {
+            const response = await fetch('/api/v1/scans/schedule-once', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+              throw new Error(result.detail || 'Failed to start bulk scan');
+            }
+
+            this.showStatus('Bulk scan started successfully! Monitor progress below.', 'success');
+            this.addLogEntry('🚀 Bulk scan initiated for all targets', 'info');
+            this.showToast('Bulk scan started successfully!', 'success');
+
+            // Start monitoring progress
+            this.startProgressMonitoring();
+
+          } catch (error) {
+            this.showStatus('Error starting bulk scan: ' + error.message, 'error');
+            this.addLogEntry('❌ Failed to start bulk scan: ' + error.message, 'error');
+            this.showToast('Failed to start bulk scan: ' + error.message, 'error');
+            this.resetScanState();
+          }
+        }
+
+        initializeProgress() {
+          document.getElementById('totalCount').textContent = this.targets.length;
+          document.getElementById('completedCount').textContent = '0';
+          document.getElementById('errorCount').textContent = '0';
+          document.getElementById('successRate').textContent = '0%';
+          document.getElementById('progressFill').style.width = '0%';
+
+          // Clear log
+          const logEl = document.getElementById('scanLog');
+          logEl.innerHTML = '<div class="log-entry info">[INFO] 🔍 Scanning started...</div>';
+        }
+
+        startProgressMonitoring() {
+          this.progressInterval = setInterval(async () => {
+            try {
+              await this.updateProgress();
+            } catch (error) {
+              console.error('Error monitoring progress:', error);
+              this.addLogEntry('⚠️ Error monitoring progress: ' + error.message, 'error');
+              
+              this.retryCount++;
+              if (this.retryCount >= this.maxRetries) {
+                this.addLogEntry('❌ Max retries reached. Stopping progress monitoring.', 'error');
+                this.finishScan(this.lastCompletedCount, 0);
+              }
+            }
+          }, 2000);
+        }
+
+        async updateProgress() {
+          const response = await fetch('/api/v1/scans/history?limit=100');
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.detail || 'Failed to fetch scan history');
+          }
+
+          if (data.history) {
+            // Count recent scans (within last 5 minutes to be safe)
+            const recentScans = data.history.filter((scan) => {
+              const scanTime = new Date(scan.scan_time).getTime();
+              return scanTime >= this.startTime - 300000; // 5 minutes buffer
+            });
+
+            const completedCount = Math.min(recentScans.length, this.targets.length);
+            const errorCount = recentScans.filter(scan => scan.status === 'failed').length;
+            const successCount = completedCount - errorCount;
+            const successRate = completedCount > 0 ? Math.round((successCount / completedCount) * 100) : 0;
+
+            // Update progress display
+            this.updateProgressDisplay(completedCount, errorCount, successRate);
+
+            // Add new log entries
+            if (completedCount > this.lastCompletedCount) {
+              const newScans = recentScans.slice(0, completedCount - this.lastCompletedCount);
+              newScans.forEach((scan) => {
+                const status = scan.status === 'failed' ? 'error' : 'success';
+                const icon = scan.status === 'failed' ? '❌' : '✅';
+                const message = scan.status === 'failed'
+                  ? `${icon} Failed to scan ${scan.target}: ${scan.error_message || 'Unknown error'}`
+                  : `${icon} Successfully scanned ${scan.target}`;
+                this.addLogEntry(message, status);
+              });
+              this.lastCompletedCount = completedCount;
+            }
+
+            // Check if scan is complete
+            if (completedCount >= this.targets.length) {
+              clearInterval(this.progressInterval);
+              this.finishScan(completedCount, errorCount);
+            }
+          }
+        }
+
+        updateProgressDisplay(completed, errors, successRate) {
+          const total = this.targets.length;
+          const percentage = Math.min((completed / total) * 100, 100);
+
+          document.getElementById('completedCount').textContent = completed;
+          document.getElementById('errorCount').textContent = errors;
+          document.getElementById('successRate').textContent = successRate + '%';
+          document.getElementById('progressFill').style.width = percentage + '%';
+        }
+
+        finishScan(completed, errors) {
+          const scanBtn = document.getElementById('bulkScanBtn');
+          const scanBtnText = document.getElementById('scanBtnText');
+
+          this.scanInProgress = false;
+          scanBtn.classList.remove('loading');
+          scanBtn.disabled = false;
+          scanBtnText.textContent = '🚀 Start Bulk Scan';
+
+          const successCount = completed - errors;
+          const message = `🎉 Bulk scan completed! ${successCount} successful, ${errors} failed.`;
+          const statusType = errors > successCount ? 'warning' : 'success';
+          
+          this.showStatus(message, statusType);
+          this.addLogEntry(message, 'info');
+          this.showToast(message, statusType);
+
+          // Reload targets to show updated results
+          setTimeout(() => {
+            this.loadTargets();
+          }, 2000);
+        }
+
+        resetScanState() {
+          const scanBtn = document.getElementById('bulkScanBtn');
+          const scanBtnText = document.getElementById('scanBtnText');
+
+          this.scanInProgress = false;
+          scanBtn.classList.remove('loading');
+          scanBtn.disabled = false;
+          scanBtnText.textContent = '🚀 Start Bulk Scan';
+
+          if (this.progressInterval) {
+            clearInterval(this.progressInterval);
+          }
+        }
+
+        showStatus(message, type = 'info') {
+          const banner = document.getElementById('statusBanner');
+          const messageEl = document.getElementById('statusMessage');
+          const iconEl = banner.querySelector('.status-icon');
+
+          banner.className = `status-banner ${type} show`;
+          messageEl.textContent = message;
+
+          // Set appropriate icon
+          const icons = {
+            success: '✅',
+            error: '❌',
+            warning: '⚠️',
+            info: 'ℹ️'
+          };
+          iconEl.textContent = icons[type] || icons.info;
+
+          // Auto-hide after 5 seconds for success/info messages
+          if (type === 'success' || type === 'info') {
+            setTimeout(() => {
+              banner.classList.remove('show');
+            }, 5000);
+          }
+        }
+
+        addLogEntry(message, type = 'info') {
+          const logEl = document.getElementById('scanLog');
+          const timestamp = new Date().toLocaleTimeString();
+          const logEntry = document.createElement('div');
+
+          logEntry.className = `log-entry ${type}`;
+          logEntry.textContent = `[${timestamp}] ${message}`;
+
+          logEl.appendChild(logEntry);
+          logEl.scrollTop = logEl.scrollHeight;
+
+          // Limit log entries to prevent memory issues
+          const entries = logEl.querySelectorAll('.log-entry');
+          if (entries.length > 100) {
+            entries[0].remove();
+          }
+        }
+
+        showToast(message, type = 'info') {
+          // Remove existing toast if any
+          const existingToast = document.querySelector('.toast');
+          if (existingToast) {
+            existingToast.remove();
+          }
+
+          const toast = document.createElement('div');
+          toast.className = `toast ${type}`;
+          toast.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 1.2em;">${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}</span>
+              <span>${message}</span>
+            </div>
+          `;
+
+          document.body.appendChild(toast);
+
+          // Show toast
+          setTimeout(() => {
+            toast.classList.add('show');
+          }, 100);
+
+          // Hide toast after 4 seconds
+          setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+              if (toast.parentNode) {
+                toast.remove();
+              }
+            }, 300);
+          }, 4000);
+        }
+      }
+
+      // Initialize the scanner when DOM is loaded
+      document.addEventListener('DOMContentLoaded', () => {
+        window.bulkScanner = new BulkScanner();
+      });
+
+      // Legacy function for backward compatibility
+      function startBulkScan() {
+        if (window.bulkScanner) {
+          window.bulkScanner.startBulkScan();
+        }
+      }
+
+      // Add some utility functions for enhanced functionality
+      function exportResults() {
+        if (window.bulkScanner && window.bulkScanner.targets.length > 0) {
+          const results = window.bulkScanner.targets.map(target => ({
+            target: target.target,
+            status: target.status,
+            updated_at: target.updated_at,
+            result: target.result ? JSON.parse(target.result) : null
+          }));
+          
+          const dataStr = JSON.stringify(results, null, 2);
+          const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+          
+          const exportFileDefaultName = `scan_results_${new Date().toISOString().split('T')[0]}.json`;
+          
+          const linkElement = document.createElement('a');
+          linkElement.setAttribute('href', dataUri);
+          linkElement.setAttribute('download', exportFileDefaultName);
+          linkElement.click();
+        }
+      }
+
+      // Add keyboard shortcuts help
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'F1') {
+          e.preventDefault();
+          alert('Keyboard Shortcuts:\n\nCtrl + Enter: Start bulk scan\nF1: Show this help\nEsc: Clear status messages');
+        }
+        
+        if (e.key === 'Escape') {
+          const banner = document.getElementById('statusBanner');
+          banner.classList.remove('show');
+        }
+      });
+
+      // Add connection status monitoring
+      window.addEventListener('online', () => {
+        if (window.bulkScanner) {
+          window.bulkScanner.showToast('Connection restored', 'success');
+        }
+      });
+
+      window.addEventListener('offline', () => {
+        if (window.bulkScanner) {
+          window.bulkScanner.showToast('Connection lost - some features may not work', 'warning');
+        }
+      });
+    </script>
+  </body>
+</html>
