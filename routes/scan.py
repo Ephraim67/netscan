@@ -22,6 +22,14 @@ def get_scanner() -> NetScanner:
     """Dependency injection for NetScanner."""
     return NetScanner()
 
+def parse_json(result_str):
+    if not result_str:
+        return None
+    try:
+        return json.loads(result_str)
+    except json.JSONDecodeError:
+        return None
+
 @router.get("/scans/health")
 async def scanner_health():
     """Scanner service health check."""
@@ -157,9 +165,10 @@ async def get_scan_targets(db: Session = Depends(get_db)):
                 "id": t.id,
                 "target": t.target,
                 "status": t.status,
-                "created_at": t.created_at,
-                "updated_at": t.updated_at,
-                "result": json.loads(t.result) if t.result else None
+                "created_at": t.created_at.isoformat() if t.created_at else None,
+                "updated_at": t.updated_at.isoformat() if t.updated_at else None,
+                # "result": json.loads(t.result) if t.result else None
+                "result": parse_json(t.result)
             }
             for t in targets
         ]
