@@ -2,14 +2,14 @@ from fastapi import APIRouter, HTTPException, Depends, Body
 from sqlalchemy.orm import Session
 from services.viewdns_scanner import NetScanner
 from schemas.scan import ScanRequest, ScanResult
-from models.database import get_db, ScanTarget, ScanHistory, SessionLocal  # Import your DB models and SessionLocal
-import logging
+from models.database import get_db, ScanTarget, ScanHistory, SessionLocal, EmailLog
 import json
+from sqlalchemy import func, and_
+from datetime import datetime, timedelta
 from typing import List
 from pydantic import BaseModel
-from datetime import datetime
-# from fastapi import BackgroundTasks
-from scheduller import start_scheduler
+import logging
+from scheduller import start_scheduler, shutdown_scheduler, scheduler
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,17 @@ router = APIRouter()
 
 class ScheduleRequest(BaseModel):
     targets: List[str]
+
+class EmailLogResponse(BaseModel):
+    id: int
+    subject: str
+    recipients: List[str]
+    status: str
+    error_message: str
+    sent_at: str
+
+    class Config:
+        orm_mode = True
 
 def get_scanner() -> NetScanner:
     """Dependency injection for NetScanner."""
@@ -227,9 +238,65 @@ async def get_scan_targets(db: Session = Depends(get_db)):
 #     return {"message": "Scan scheduled for all saved targets."}
 
 
+
+# Start the scheduler to run scans every 10 minutes
+# and send daily emails
 @router.post("/scans/schedule-once")
 async def schedule_scan_once(payload: ScheduleRequest):
     start_scheduler(selected_targets=payload.targets)
     return {
         "message": f"Scheduler started. Scans will run every 10 minutes for {len(payload.targets)} targets."
+    }
+
+@router.post("/scans/schedule-stop")
+async def stop_scheduler():
+    if scheduler and scheduler.running:
+        scheduler.shutdown()
+        return {"message": "Scheduler stopped."}
+    else:
+        return {"message": "Scheduler is not running."}
+
+@router.post("/scans/schedule-restart")
+async def restart_scheduler(payload: ScheduleRequest):
+    shutdown_scheduler()
+    start_scheduler(selected_targets=payload.targets)
+    return {
+        "message": f"Scheduler restarted. Scans will run every 10 minutes for {len(payload.targets)} targets."
+    }
+
+@router.get("/scans/schedule-status")
+async def check_scheduler_status():
+    if scheduler is None:
+        return {"running": False, "message": "Scheduler is not initialized."}
+    return {
+        "running": scheduler.running,
+        "jobs": [job.id for job in scheduler.get_jobs()]
+    }
+
+@router.get("/scans/emails/sent", response_model=List[EmailLogResponse])
+async def get_sent_emails(db: Session = Depends(get_db)):
+    now = datetime.utcnow()
+    yesterday = now - timedelta(hours=24)
+
+    logs = db.query(EmailLog)\
+        .filter(EmailLog.sent_at >= yesterday)\
+        .order_by(EmailLog.sent_at.desc())\
+        .all()
+    
+    return {
+        "emails": [
+            {
+                "id": log.id,
+                "subject": log.subject,
+                "recipients": log.recipients.split(",") if log.recipients else [],
+                "status": log.status,
+                "error_message": log.error_message,
+                "sent_at": log.sent_at.isoformat() if log.sent_at else None
+                
+            }
+
+            for log in logs
+        ],
+
+        "count": len(logs)
     }

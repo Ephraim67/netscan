@@ -776,7 +776,7 @@
   <body>
     <div class="container">
       <div class="header">
-        <h1>Bulk Network Scanner</h1>
+        <h1>Schedule Network Scan with Netscan</h1>
         <p>Advanced multi-target scanning with real-time monitoring</p>
       </div>
 
@@ -787,7 +787,7 @@
 
       <div class="targets-section">
         <div class="section-header">
-          <h2 class="section-title">📋 Saved Targets</h2>
+          <h2 class="section-title">Saved Targets</h2>
           <span class="target-count" id="targetCount">
             <div class="loading-spinner" style="width: 20px; height: 20px; border-width: 2px;"></div>
           </span>
@@ -803,18 +803,18 @@
         <div id="targetsEmpty" class="empty-state" style="display: none;">
           <h3>No targets found</h3>
           <p>Start by adding some targets to scan. Once you have targets, you can perform bulk operations on all of them.</p>
-          <a href="/scan" class="nav-link">🔍 Start Scanning</a>
+          <a href="/scan" class="nav-link">Start Scanning</a>
         </div>
       </div>
 
       <div class="scan-controls">
-        <h3>🎯 Quick Target Entry</h3>
+        <h3>Quick Target Entry</h3>
         <p>Add a new target and schedule an immediate scan</p>
 
         <form id="scheduleForm">
           <div class="form-group">
             <label for="targetInput">
-              <span>🌐 Target (IP Address or Domain)</span>
+              <span>Target (IP Address or Domain)</span>
             </label>
             <input
               type="text"
@@ -832,14 +832,14 @@
 
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
           <button id="bulkScanBtn" class="btn" onclick="startBulkScan()">
-            <span id="scanBtnText">🚀 Start Bulk Scan</span>
+            <span id="scanBtnText">Start Bulk Scan</span>
           </button>
         </div>
       </div>
 
       <div id="progressSection" class="progress-section">
         <div class="progress-header">
-          <h3 class="progress-title">📊 Scan Progress</h3>
+          <h3 class="progress-title">Scan Progress</h3>
           <div class="progress-stats">
             <div class="stat-item">
               <span class="stat-number" id="completedCount">0</span>
@@ -871,9 +871,9 @@
 
       <div class="navigation">
         <a href="/scan" class="nav-link">← Single Scan</a>
-        <a href="/results" class="nav-link">📊 View Results</a>
-        <a href="/history" class="nav-link">📋 Scan History</a>
-        <a href="/docs" class="nav-link">📖 API Docs</a>
+        <a href="/results" class="nav-link">📊Vew Results</a>
+        <a href="/history" class="nav-link">Scan History</a>
+        <a href="/docs" class="nav-link">API Docs</a>
       </div>
     </div>
 
@@ -1298,7 +1298,7 @@
           this.scanInProgress = false;
           scanBtn.classList.remove('loading');
           scanBtn.disabled = false;
-          scanBtnText.textContent = '🚀 Start Bulk Scan';
+          scanBtnText.textContent = Start Bulk Scan';
 
           if (this.progressInterval) {
             clearInterval(this.progressInterval);

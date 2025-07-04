@@ -383,16 +383,16 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Scan Results</h1>
+            <h1>Scan Results</h1>
             <p>View your scan history and target status</p>
         </div>
 
         <div class="tab-container">
             <button class="tab-button active" onclick="switchTab('history')">
-                🕒 Scan History
+                Scan History
             </button>
             <button class="tab-button" onclick="switchTab('targets')">
-                🎯 Scan Targets
+                Scan Targets
             </button>
         </div>
 
@@ -400,7 +400,7 @@
         <div id="history-tab" class="tab-content active">
             <div class="controls">
                 <button class="refresh-btn" onclick="loadHistory()">
-                    🔄 Refresh History
+                    Refresh History
                 </button>
                 <div class="pagination">
                     <button id="prevBtn" onclick="prevPage()">← Previous</button>
@@ -422,7 +422,7 @@
         <div id="targets-tab" class="tab-content">
             <div class="controls">
                 <button class="refresh-btn" onclick="loadTargets()">
-                    🔄 Refresh Targets
+                    Refresh Targets
                 </button>
             </div>
             
@@ -431,13 +431,13 @@
             <div id="targets-empty" class="empty-state" style="display: none;">
                 <h3>No scan targets yet</h3>
                 <p>Start scanning to create targets</p>
-                <a href="/scan" class="nav-link">🔍 Start Scanning</a>
+                <a href="/scan" class="nav-link">Start Scanning</a>
             </div>
         </div>
 
         <div class="navigation">
             <a href="/scan" class="nav-link">← Back to Scanner</a>
-            <a href="/docs" class="nav-link">📖 API Documentation</a>
+            <a href="/docs" class="nav-link">API Documentation</a>
         </div>
     </div>
 

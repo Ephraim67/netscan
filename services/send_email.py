@@ -1,26 +1,35 @@
-import smtplib
-from email.mime.text import MIMEText
-from config import settings
-from models.database import SessionLocal, ScanHistory  # Make sure to import SessionLocal and ScanHistory from your db module
+from models.database import SessionLocal
+from models.database import EmailLog
+from datetime import datetime
 
 def send_daily_email():
     db = SessionLocal()
     try:
-        all_scans = db.query(ScanHistory).all()
-        body = "\n".join([f"Target: {s.target}, Status: {s.status}" for s in all_scans])
+        subject = "Daily Scan Summary"
+        recipients = ["frankroyal10@gmail.com", "norbert.ephraim0@gmail.com"]
+        body = "This is your daily scan summary. Please check the attached report for details."
 
-        msg = MIMEText(body)
-        msg["Subject"] = "Daily Port Scan Report"
-        msg["From"] = settings.email_sender
-        msg["To"] = settings.email_receiver
+        log = EmailLog(
+            subject=subject,
+            recipients=recipients,
+            body=body,
+            sent_at=datetime.utcnow(),
+            status="sent"
+        )
 
-        with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
-            server.starttls()
-            server.login(settings.smtp_username, settings.smtp_password)
-            server.sendmail(settings.email_sender, [settings.email_receiver], msg.as_string())
+        db.add(log)
+        db.commit()
 
-        print("Daily scan email sent!")
+    except Exception as e:
+        db.add(EmailLog(
+            subject=subject,
+            recipients=",".join(recipients),
+            body=body,
+            sent_at=datetime.utcnow(),
+            status="failed",
+            error_message=str(e)
+        ))
 
+        db.commit()
     finally:
         db.close()
-
