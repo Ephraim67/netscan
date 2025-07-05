@@ -4,8 +4,9 @@ from services.viewdns_scanner import NetScanner
 from schemas.scan import ScanRequest, ScanResult
 from models.database import get_db, ScanTarget, ScanHistory, SessionLocal, EmailLog
 import json
+import warnings
 from sqlalchemy import func, and_
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 from pydantic import BaseModel
 import logging
@@ -27,19 +28,20 @@ class EmailLogResponse(BaseModel):
     sent_at: str
 
     class Config:
-        orm_mode = True
+        validate_by_name = True
+        from_attributes = True
 
 def get_scanner() -> NetScanner:
     """Dependency injection for NetScanner."""
     return NetScanner()
 
-def parse_json(result_str):
-    if not result_str:
-        return None
-    try:
-        return json.loads(result_str)
-    except json.JSONDecodeError:
-        return None
+# def parse_json(result_str):
+#     if not result_str:
+#         return None
+#     try:
+#         return json.loads(result_str)
+#     except json.JSONDecodeError:
+#         return None
 
 @router.get("/scans/health")
 async def scanner_health():
@@ -47,7 +49,7 @@ async def scanner_health():
     return {
         "status": "healthy",
         "service": "scanner",
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z"
     }
 
 @router.post("/scans/single", response_model=ScanResult)
@@ -57,7 +59,7 @@ async def scan_single(
     db: Session = Depends(get_db) 
 ):
     """Perform a single port scan."""
-    start_time = datetime.utcnow()
+    start_time = datetime.now(timezone.utc)
     
     try:
         # Check if target already exists in scan_targets
@@ -84,7 +86,7 @@ async def scan_single(
         scan_result = ScanResult(**result_dict)
         
         # Calculate scan duration
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         scan_duration = int((end_time - start_time).total_seconds())
         
         # Update scan target with results
@@ -110,10 +112,11 @@ async def scan_single(
         # Update target status to failed if it exists
         if 'scan_target' in locals():
             scan_target.status = "failed"
-            scan_target.updated_at = datetime.utcnow()
+            scan_target.updated_at = datetime.now(timezone.utc)
             
             # Create failed scan history record
-            end_time = datetime.utcnow()
+            end_time = datetime.now(timezone.utc)
+
             scan_duration = int((end_time - start_time).total_seconds())
             
             scan_history = ScanHistory(
@@ -178,8 +181,8 @@ async def get_scan_targets(db: Session = Depends(get_db)):
                 "status": t.status,
                 "created_at": t.created_at.isoformat() if t.created_at else None,
                 "updated_at": t.updated_at.isoformat() if t.updated_at else None,
-                # "result": json.loads(t.result) if t.result else None
-                "result": parse_json(t.result)
+                "result": json.loads(t.result) if t.result else None
+                # "result": parse_json(t.result)
             }
             for t in targets
         ]
@@ -275,7 +278,7 @@ async def check_scheduler_status():
 
 @router.get("/scans/emails/sent", response_model=List[EmailLogResponse])
 async def get_sent_emails(db: Session = Depends(get_db)):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     yesterday = now - timedelta(hours=24)
 
     logs = db.query(EmailLog)\
@@ -300,3 +303,5 @@ async def get_sent_emails(db: Session = Depends(get_db)):
 
         "count": len(logs)
     }
+
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic")

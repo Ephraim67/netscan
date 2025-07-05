@@ -3,7 +3,7 @@ import os
 import logging
 from datetime import datetime
 
-from fastapi import FastAPI, Request, Depends, Form
+from fastapi import FastAPI, Request, Depends, Form, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.exceptions import RequestValidationError
@@ -121,10 +121,16 @@ async def scan_interface(request: Request, db: Session = Depends(get_db)):
 async def scan_interface(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse("results.html", {"request": request})
 
-@app.get("/schedulescan", response_class=HTMLResponse)
-async def schedule_scan(request: Request, db: Session = Depends(get_db)):
-    
-    return templates.TemplateResponse("schedule_scan.html", {"request": request})
+@app.get("/schedulescan")
+async def schedule_scan(request: Request):
+    response = templates.TemplateResponse(
+        "schedule_scan.html",
+        {"request": request}
+    )
+    response.headers["Content-Type"] = "text/html; charset=utf-8"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
 
 # @app.get("/results", response_class=HTMLResponse)
 # async def view_results(request: Request, db: Session = Depends(get_db)):
